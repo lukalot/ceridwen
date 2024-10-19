@@ -32,6 +32,17 @@ const ThreadItem = styled.div`
   font-family: 'Arno Pro', serif;
 `;
 
+const CeridwenDescription = styled.p`
+  font-size: 16px;
+  color: #a9a9a9;
+  margin-top: auto;
+  margin-bottom: 0px;
+  padding-top: 10px;
+  border-top: 1px solid #242424;
+  text-align: center;
+  font-style: italic;
+`;
+
 function ThreadList() {
   // This is a placeholder. In a real app, you'd fetch threads from a state management system or API
   const threads = [
@@ -47,6 +58,9 @@ function ThreadList() {
           <ThreadItem key={thread.id}>{thread.title}</ThreadItem>
         ))}
       </ThreadListContent>
+      <CeridwenDescription>
+        Ceridwen is a better LLM Client, because I got tired of the other ones.
+      </CeridwenDescription>
     </ThreadListContainer>
   );
 }
