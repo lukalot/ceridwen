@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperclip, faCamera, faArrowUp, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip, faCamera, faArrowUp, faChevronDown, faCircleStop } from '@fortawesome/free-solid-svg-icons';
 
 // Add this global style at the top of the file, after the imports
 const GlobalStyle = createGlobalStyle`
@@ -23,13 +23,27 @@ const ChatAreaContainer = styled.div`
   color: #e0e0e0;
 `;
 
-const Header = styled.h2`
+const Header = styled.textarea`
   font-family: 'Arno Pro', serif;
   font-weight: 500;
   font-size: 40px;
   color: #d9d9d9;
   margin-bottom: 16px;
   margin-top: 0px;
+  width: 100%;
+  background: none;
+  border: none;
+  resize: none;
+  border-bottom: 1px solid #242424;
+  flex-grow: 1;
+  max-height: 60px;
+  max-width: 100%;
+  width: 100%;
+  spellcheck: false;
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 const ChatInputContainer = styled.div`
@@ -41,7 +55,7 @@ const ChatInputContainer = styled.div`
   border-radius: 5px;
   border: 1px solid #242424;
   padding: 10px;
-  margin-top: auto; // Push to the bottom
+  margin-top: auto;
 `;
 
 const InputRow = styled.div`
@@ -177,7 +191,7 @@ const DropdownItem = styled.li`
 
 function ModelSelector({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
-  const options = ['Claude 3.5 Sonnet', 'gpt-4o', 'Claude 3 Opus', 'o1 Preview'];
+  const options = ['Claude 3.5 Sonnet', 'gpt-4o', 'Claude 3 Opus', 'o1 Preview', 'gpt-3.5-turbo'];
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
@@ -383,8 +397,9 @@ function ChatArea() {
   const [inputValue, setInputValue] = useState('');
   const [model, setModel] = useState('gpt-4o');
   const [chatHistory, setChatHistory] = useState([]);
-  const textareaRef = useRef(null);
+  const chatinputRef = useRef(null);
   const chatHistoryRef = useRef(null);
+  const [headerText, setHeaderText] = useState('Welcome to Ceridwen');
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -454,17 +469,18 @@ function ChatArea() {
     });
   };
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [inputValue]);
+  const handleHeaderChange = (e) => {
+    setHeaderText(e.target.value);
+  };
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     if (chatHistoryRef.current) {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [chatHistory]);
 
   useEffect(() => {
@@ -473,14 +489,35 @@ function ChatArea() {
       textarea.style.height = 'auto';
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
+    scrollToBottom();
   }, [chatHistory]);
+
+  useEffect(() => {
+    const headerTextarea = document.querySelector('textarea[data-header]');
+    if (headerTextarea) {
+      headerTextarea.style.height = 'auto';
+      headerTextarea.style.height = `${headerTextarea.scrollHeight}px`;
+    }
+    scrollToBottom();
+  }, [chatHistory, headerText]);
+
+  useEffect(() => {
+    if (chatinputRef.current) {
+      chatinputRef.current.style.height = 'auto';
+      chatinputRef.current.style.height = `${chatinputRef.current.scrollHeight}px`;
+    }
+  }, [inputValue]);
 
   return (
     <>
       <GlobalStyle />
       <ChatAreaContainer>
         <ChatHistoryContainer ref={chatHistoryRef}>
-          <Header>Welcome to Ceridwen</Header>
+          <Header
+            value={headerText}
+            onChange={handleHeaderChange}
+            data-header
+          />
           {chatHistory.length === 0 ? (
             <MessageContent value="This is where your chat messages will appear." readOnly />
           ) : (
@@ -490,7 +527,7 @@ function ChatArea() {
         <ChatInputContainer>
           <InputRow>
             <ChatInput
-              ref={textareaRef}
+              ref={chatinputRef}
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
@@ -501,7 +538,7 @@ function ChatArea() {
               <IconButton title="Attach files">
                 <FontAwesomeIcon icon={faPaperclip} />
               </IconButton>
-              <IconButton title="Take a screenshot">
+              <IconButton title="Attach images">
                 <FontAwesomeIcon icon={faCamera} />
               </IconButton>
               <SendButton onClick={handleSend} title="Send message">

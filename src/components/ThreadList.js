@@ -3,12 +3,15 @@ import styled from 'styled-components';
 
 const ThreadListContainer = styled.div`
   font-size: 18px;
-  border-radius: 5px;
+  border-radius: 0px 5px 5px 0px;
   margin: 9px;
+  margin-left: 0px;
   margin-right: 5px;
   margin-bottom: 10px;
   border: 1px solid #242424;
+  border-left: none;
   padding: 9px;
+  padding-left: 10px;
   height: calc(100% - 18px); 
   overflow-y: auto;
   font-family: 'Arno Pro', serif;
@@ -32,15 +35,21 @@ const ThreadItem = styled.div`
   font-family: 'Arno Pro', serif;
 `;
 
+const CeridwenDescriptionContainer = styled.div`
+  border-top: 1px solid #242424;
+  display: flex;
+  justify-content: center;
+`;
+
 const CeridwenDescription = styled.p`
   font-size: 16px;
-  color: #a9a9a9;
   margin-top: auto;
-  margin-bottom: 0px;
-  padding-top: 10px;
-  border-top: 1px solid #242424;
+  margin-bottom: 5px;
+  padding-top: 17px;
+  color: #a9a9a9;
   text-align: center;
   font-style: italic;
+  max-width: 235px;
 `;
 
 function ThreadList() {
@@ -58,9 +67,11 @@ function ThreadList() {
           <ThreadItem key={thread.id}>{thread.title}</ThreadItem>
         ))}
       </ThreadListContent>
-      <CeridwenDescription>
-        Ceridwen is a better LLM Client, because I got tired of the other ones.
-      </CeridwenDescription>
+      <CeridwenDescriptionContainer>
+        <CeridwenDescription>
+          Ceridwen is a better LLM Client, because I got tired of the other ones.
+        </CeridwenDescription>
+      </CeridwenDescriptionContainer>
     </ThreadListContainer>
   );
 }
