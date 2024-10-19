@@ -28,7 +28,7 @@ const StyledPanelResizeHandle = styled(PanelResizeHandle)`
     transform: translate(-50%, -50%);
     width: 2px;
     height: 32px;
-    background-color: #444;
+    background-color: #282828;
     border-radius: 1px;
   }
 

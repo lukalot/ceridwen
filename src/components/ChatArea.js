@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperclip, faCamera, faArrowUp, faChevronDown } from '@fortawesome/free-solid-svg-icons';
-import OpenAI from "openai";
+
+// Add this global style at the top of the file, after the imports
+const GlobalStyle = createGlobalStyle`
+  ::selection {
+    background-color: rgba(230, 112, 96, 0.3); // #e67060 with 30% opacity
+    color: #ffffff;
+  }
+`;
 
 const ChatAreaContainer = styled.div`
   display: flex;
@@ -52,7 +59,7 @@ const ChatInputContainer = styled.div`
   width: 100%;
   max-width: 740px;
   background-color: #161616;
-  border-radius: 7px;
+  border-radius: 5px;
   border: 1px solid #242424;
   padding: 10px;
   margin-top: auto; // Push to the bottom
@@ -98,7 +105,7 @@ const IconButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  padding: 6px;
+  padding: 5px;
   margin-right: 5px;
   color: #b0b0b0;
   font-size: 18px;
@@ -173,7 +180,7 @@ const DropdownList = styled.ul`
   width: 160px;
   background-color: #2a2a2a;
   border: 1px solid #444;
-  border-radius: 6px;
+  border-radius: 5px;
   z-index: 10;
 `;
 
@@ -233,6 +240,52 @@ const ChatHistoryContainer = styled.div`
   padding: 20px;
 `;
 
+const CappedCorner = styled.div`
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #4a4a4a;
+  opacity: 0;
+
+  &.top-left {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  &.top-right {
+    top: 0;
+    right: 0;
+    border-left: none;
+    border-bottom: none;
+  }
+
+  &.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-right: none;
+    border-top: none;
+  }
+
+  &.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-left: none;
+    border-top: none;
+  }
+`;
+
+const MessageContentWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  margin-bottom: 9px;
+
+  &:focus-within ${CappedCorner} {
+    opacity: 1;
+  }
+`;
+
 const MessageContent = styled.textarea`
   width: 100%;
   background: none;
@@ -243,8 +296,9 @@ const MessageContent = styled.textarea`
   resize: none;
   overflow: hidden;
   padding: 0;
-  margin: 0;
-  margin-bottom: 14px;
+  margin-top: 6px;
+  margin-left: 7px;
+  line-height: 1.5;
 
   &:focus {
     outline: none;
@@ -254,69 +308,59 @@ const MessageContent = styled.textarea`
 const ModelMessageContent = styled(MessageContent)`
   border-left: 2px solid #4a4a4a;
   padding-left: 10px;
-  padding-top: 2.5px;
-  margin-left: 2px;
+  margin-top: 0px;
+  padding-top: 6px;
+  margin-left: 0px;
   spellcheck: false;
-  margin-bottom: 17px;
+  position: relative;
 `;
 
 function ChatHistory({ messages, onMessageChange }) {
   return (
     <>
       {messages.map((message, index) => (
-        message.sender === 'Model' ? (
-          <ModelMessageContent
-            key={index}
-            value={message.content}
-            onChange={(e) => onMessageChange(index, e.target.value)}
-            rows={1}
-            status={message.status}
-            spellCheck={false}
-          />
-        ) : (
-          <MessageContent
-            key={index}
-            value={message.content}
-            onChange={(e) => onMessageChange(index, e.target.value)}
-            rows={1}
-            status={message.status}
-            spellCheck={true}
-          />
-        )
+        <MessageContentWrapper key={index}>
+          {message.sender === 'Model' ? (
+            <ModelMessageContent
+              value={message.content}
+              onChange={(e) => onMessageChange(index, e.target.value)}
+              rows={1}
+              status={message.status}
+              spellCheck={false}
+            />
+          ) : (
+            <MessageContent
+              value={message.content}
+              onChange={(e) => onMessageChange(index, e.target.value)}
+              rows={1}
+              status={message.status}
+              spellCheck={true}
+            />
+          )}
+          <CappedCorner className="top-left" />
+          <CappedCorner className="top-right" />
+          <CappedCorner className="bottom-left" />
+          <CappedCorner className="bottom-right" />
+        </MessageContentWrapper>
       ))}
     </>
   );
 }
 
-// Initialize OpenAI
-const openai = new OpenAI({
-  apiKey: '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',
-  dangerouslyAllowBrowser: true
-});
-
-// Modify the getModelResponse function to support streaming
+// Replace the getModelResponse function with this:
 const getModelResponse = async (messages, model, onTokenReceived) => {
   try {
-    const response = await openai.chat.completions.create({
-      model: model,
-      messages: messages.map(msg => ({
-        role: msg.sender === 'User' ? 'user' : 'assistant',
-        content: msg.content
-      })),
-      temperature: 0.7,
-      stream: true,
+    const response = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      body: JSON.stringify({ messages, model }),
     });
 
-    let fullResponse = "";
-    for await (const chunk of response) {
-      if (chunk.choices[0]?.delta?.content) {
-        const token = chunk.choices[0].delta.content;
-        fullResponse += token;
-        onTokenReceived(token);
-      }
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
     }
 
-    return fullResponse;
+    const data = await response.json();
+    return data.content;
   } catch (error) {
     console.error("There was an error calling the API:", error);
     return "I'm sorry, but I encountered an error while processing your request.";
@@ -358,21 +402,13 @@ function ChatArea() {
   };
 
   const getResponse = async (userMessage, modelMessage) => {
-    const messagesToSend = [...chatHistory, userMessage];
+    const messagesToSend = [...chatHistory, userMessage].map(msg => ({
+      role: msg.sender === 'User' ? 'user' : 'assistant',
+      content: msg.content
+    }));
     
-    const onTokenReceived = (token) => {
-      setChatHistory(prevHistory => {
-        const newHistory = [...prevHistory];
-        const lastMessage = newHistory[newHistory.length - 1];
-        return [
-          ...newHistory.slice(0, -1),
-          { ...lastMessage, content: lastMessage.content + token }
-        ];
-      });
-    };
-
     try {
-      const fullResponse = await getModelResponse(messagesToSend, model, onTokenReceived);
+      const fullResponse = await getModelResponse(messagesToSend, model);
       
       setChatHistory(prevHistory => [
         ...prevHistory.slice(0, -1),
@@ -417,43 +453,46 @@ function ChatArea() {
   }, [chatHistory]);
 
   return (
-    <ChatAreaContainer>
-      <ChatHistoryContainer ref={chatHistoryRef}>
-        <Header>Welcome to Ceridwen</Header>
-        {chatHistory.length === 0 ? (
-          <Message>This is where your chat messages will appear.</Message>
-        ) : (
-          <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
-        )}
-      </ChatHistoryContainer>
-      <ChatInputContainer>
-        <InputRow>
-          <ChatInput
-            ref={textareaRef}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Reply here..."
-            rows={1}
-          />
-          <ButtonsContainer>
-            <IconButton title="Attach files">
-              <FontAwesomeIcon icon={faPaperclip} />
-            </IconButton>
-            <IconButton title="Take a screenshot">
-              <FontAwesomeIcon icon={faCamera} />
-            </IconButton>
-            <SendButton onClick={handleSend}>
-              <FontAwesomeIcon icon={faArrowUp} />
-            </SendButton>
-          </ButtonsContainer>
-        </InputRow>
-        <BottomRow>
-          <ModelSelector value={model} onChange={handleModelChange} />
-          <NewLineHint>Use shift + return for new line</NewLineHint>
-        </BottomRow>
-      </ChatInputContainer>
-    </ChatAreaContainer>
+    <>
+      <GlobalStyle /> {/* Add this line to include the global style */}
+      <ChatAreaContainer>
+        <ChatHistoryContainer ref={chatHistoryRef}>
+          <Header>Welcome to Ceridwen</Header>
+          {chatHistory.length === 0 ? (
+            <Message>This is where your chat messages will appear.</Message>
+          ) : (
+            <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
+          )}
+        </ChatHistoryContainer>
+        <ChatInputContainer>
+          <InputRow>
+            <ChatInput
+              ref={textareaRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Reply here..."
+              rows={1}
+            />
+            <ButtonsContainer>
+              <IconButton title="Attach files">
+                <FontAwesomeIcon icon={faPaperclip} />
+              </IconButton>
+              <IconButton title="Take a screenshot">
+                <FontAwesomeIcon icon={faCamera} />
+              </IconButton>
+              <SendButton onClick={handleSend} title="Send message">
+                <FontAwesomeIcon icon={faArrowUp} />
+              </SendButton>
+            </ButtonsContainer>
+          </InputRow>
+          <BottomRow>
+            <ModelSelector value={model} onChange={handleModelChange} />
+            <NewLineHint>Use shift + return for new line</NewLineHint>
+          </BottomRow>
+        </ChatInputContainer>
+      </ChatAreaContainer>
+    </>
   );
 }
 
