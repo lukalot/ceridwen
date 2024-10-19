@@ -345,7 +345,9 @@ const getModelResponse = async (messages, model, onTokenReceived) => {
     });
 
     if (!response.ok) {
-      throw new Error('Network response was not ok');
+      const errorText = await response.text();
+      console.error('Error response:', response.status, errorText);
+      throw new Error(`Network response was not ok: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
