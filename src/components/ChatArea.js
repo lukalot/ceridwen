@@ -23,17 +23,6 @@ const ChatAreaContainer = styled.div`
   color: #e0e0e0;
 `;
 
-const ArticleContainer = styled.article`
-  flex-grow: 1;
-  overflow-y: auto;
-  border-radius: 10px;
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 740px;
-  font-family: 'Arno Pro', serif;
-  padding: 20px;
-`;
-
 const Header = styled.h2`
   font-family: 'Arno Pro', serif;
   font-weight: 500;
