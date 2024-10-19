@@ -32,16 +32,6 @@ const Header = styled.h2`
   margin-top: 0px;
 `;
 
-const Message = styled.p`
-  font-family: 'Arno Pro', serif;
-  font-weight: 500;
-  font-size: 20px;
-  color: #b0b0b0;
-  line-height: 1.5;
-  margin-bottom: 16px;
-  margin-top: 16px;
-`;
-
 const ChatInputContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -336,10 +326,9 @@ function ChatHistory({ messages, onMessageChange }) {
   );
 }
 
-// Replace the getModelResponse function with this:
 const getModelResponse = async (messages, model, onTokenReceived) => {
   try {
-    const response = await fetch('/.netlify/functions/chat', {
+    const response = await fetch('/chat', {
       method: 'POST',
       body: JSON.stringify({ messages, model }),
     });
@@ -350,8 +339,40 @@ const getModelResponse = async (messages, model, onTokenReceived) => {
       throw new Error(`Network response was not ok: ${response.status} ${errorText}`);
     }
 
-    const data = await response.json();
-    return data.content;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullResponse = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(5).trim();
+          if (data === '[DONE]') {
+            return fullResponse;
+          }
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.choices && parsed.choices[0].delta.content) {
+              const content = parsed.choices[0].delta.content;
+              fullResponse += content;
+              onTokenReceived(content);
+            }
+          } catch (e) {
+            console.error('Error parsing JSON:', e, 'for line:', line);
+          }
+        }
+      }
+    }
+
+    return fullResponse;
   } catch (error) {
     console.error("There was an error calling the API:", error);
     return "I'm sorry, but I encountered an error while processing your request.";
@@ -398,8 +419,19 @@ function ChatArea() {
       content: msg.content
     }));
     
+    const onTokenReceived = (token) => {
+      setChatHistory(prevHistory => {
+        const newHistory = [...prevHistory];
+        const lastMessage = newHistory[newHistory.length - 1];
+        return [
+          ...newHistory.slice(0, -1),
+          { ...lastMessage, content: lastMessage.content + token }
+        ];
+      });
+    };
+
     try {
-      const fullResponse = await getModelResponse(messagesToSend, model);
+      const fullResponse = await getModelResponse(messagesToSend, model, onTokenReceived);
       
       setChatHistory(prevHistory => [
         ...prevHistory.slice(0, -1),
@@ -445,12 +477,12 @@ function ChatArea() {
 
   return (
     <>
-      <GlobalStyle /> {/* Add this line to include the global style */}
+      <GlobalStyle />
       <ChatAreaContainer>
         <ChatHistoryContainer ref={chatHistoryRef}>
           <Header>Welcome to Ceridwen</Header>
           {chatHistory.length === 0 ? (
-            <Message>This is where your chat messages will appear.</Message>
+            <MessageContent value="This is where your chat messages will appear." readOnly />
           ) : (
             <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
           )}
