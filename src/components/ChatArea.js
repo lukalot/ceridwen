@@ -244,7 +244,7 @@ const MessageContent = styled.textarea`
   overflow: hidden;
   padding: 0;
   margin: 0;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 
   &:focus {
     outline: none;
@@ -254,9 +254,10 @@ const MessageContent = styled.textarea`
 const ModelMessageContent = styled(MessageContent)`
   border-left: 2px solid #4a4a4a;
   padding-left: 10px;
-  padding-top: 3px;
+  padding-top: 2.5px;
   margin-left: 2px;
   spellcheck: false;
+  margin-bottom: 17px;
 `;
 
 function ChatHistory({ messages, onMessageChange }) {
@@ -293,8 +294,8 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-// Real API call using OpenAI package
-const getModelResponse = async (messages, model) => {
+// Modify the getModelResponse function to support streaming
+const getModelResponse = async (messages, model, onTokenReceived) => {
   try {
     const response = await openai.chat.completions.create({
       model: model,
@@ -303,9 +304,19 @@ const getModelResponse = async (messages, model) => {
         content: msg.content
       })),
       temperature: 0.7,
+      stream: true,
     });
 
-    return response.choices[0].message.content;
+    let fullResponse = "";
+    for await (const chunk of response) {
+      if (chunk.choices[0]?.delta?.content) {
+        const token = chunk.choices[0].delta.content;
+        fullResponse += token;
+        onTokenReceived(token);
+      }
+    }
+
+    return fullResponse;
   } catch (error) {
     console.error("There was an error calling the API:", error);
     return "I'm sorry, but I encountered an error while processing your request.";
@@ -337,9 +348,42 @@ function ChatArea() {
   const handleSend = () => {
     if (inputValue.trim()) {
       const newUserMessage = { sender: 'User', content: inputValue.trim(), status: 'sent' };
-      const newModelMessage = { sender: 'Model', content: '···', status: 'waiting' };
+      const newModelMessage = { sender: 'Model', content: '', status: 'streaming' };
       setChatHistory(prevHistory => [...prevHistory, newUserMessage, newModelMessage]);
       setInputValue('');
+
+      // Move the API call here to avoid multiple calls
+      getResponse(newUserMessage, newModelMessage);
+    }
+  };
+
+  const getResponse = async (userMessage, modelMessage) => {
+    const messagesToSend = [...chatHistory, userMessage];
+    
+    const onTokenReceived = (token) => {
+      setChatHistory(prevHistory => {
+        const newHistory = [...prevHistory];
+        const lastMessage = newHistory[newHistory.length - 1];
+        return [
+          ...newHistory.slice(0, -1),
+          { ...lastMessage, content: lastMessage.content + token }
+        ];
+      });
+    };
+
+    try {
+      const fullResponse = await getModelResponse(messagesToSend, model, onTokenReceived);
+      
+      setChatHistory(prevHistory => [
+        ...prevHistory.slice(0, -1),
+        { ...modelMessage, content: fullResponse, status: 'received' }
+      ]);
+    } catch (error) {
+      console.error("Error getting model response:", error);
+      setChatHistory(prevHistory => [
+        ...prevHistory.slice(0, -1),
+        { ...modelMessage, content: "An error occurred while processing your request.", status: 'error' }
+      ]);
     }
   };
 
@@ -350,25 +394,6 @@ function ChatArea() {
       return newHistory;
     });
   };
-
-  useEffect(() => {
-    if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].status === 'waiting') {
-      const getResponse = async () => {
-        const messagesToSend = chatHistory.slice(0, -1);
-        const response = await getModelResponse(messagesToSend, model);
-        setChatHistory(prevHistory => {
-          const newHistory = [...prevHistory];
-          newHistory[newHistory.length - 1] = {
-            ...newHistory[newHistory.length - 1],
-            content: response,
-            status: 'received'
-          };
-          return newHistory;
-        });
-      };
-      getResponse();
-    }
-  }, [chatHistory, model]);
 
   useEffect(() => {
     if (textareaRef.current) {

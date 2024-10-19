@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 const ThreadListContainer = styled.div`
+  font-size: 18px;
   border-radius: 7px;
   margin: 9px;
   margin-right: 5px;
