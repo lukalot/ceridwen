@@ -273,6 +273,11 @@ const MessageContentWrapper = styled.div`
   position: relative;
   width: 100%;
   margin-bottom: 9px;
+  transition: background-color 0.2s ease;
+
+  &:focus-within {
+    background-color: #151515;
+  }
 
   &:focus-within ${CappedCorner} {
     opacity: 1;
@@ -288,9 +293,9 @@ const MessageContent = styled.textarea`
   font-size: 18px;
   resize: none;
   overflow: hidden;
-  padding: 0;
-  margin-top: 6px;
-  margin-left: 7px;
+  padding: 6px 10px;
+  padding-bottom: 0px;
+  margin: 0;
   line-height: 1.5;
 
   &:focus {
@@ -400,6 +405,7 @@ function ChatArea() {
   const chatinputRef = useRef(null);
   const chatHistoryRef = useRef(null);
   const [headerText, setHeaderText] = useState('Welcome to Ceridwen');
+  const [isNearBottom, setIsNearBottom] = useState(true);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -419,7 +425,7 @@ function ChatArea() {
   const handleSend = () => {
     if (inputValue.trim()) {
       const newUserMessage = { sender: 'User', content: inputValue.trim(), status: 'sent' };
-      const newModelMessage = { sender: 'Model', content: '', status: 'streaming' };
+      const newModelMessage = { sender: 'Model', content: '···', status: 'streaming' };
       setChatHistory(prevHistory => [...prevHistory, newUserMessage, newModelMessage]);
       setInputValue('');
 
@@ -474,14 +480,30 @@ function ChatArea() {
   };
 
   const scrollToBottom = () => {
-    if (chatHistoryRef.current) {
+    if (chatHistoryRef.current && isNearBottom) {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
   };
 
+  const handleScroll = () => {
+    if (chatHistoryRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatHistoryRef.current;
+      const bottomThreshold = 20; // pixels from bottom
+      setIsNearBottom(scrollHeight - (scrollTop + clientHeight) <= bottomThreshold);
+    }
+  };
+
+  useEffect(() => {
+    const chatHistoryContainer = chatHistoryRef.current;
+    if (chatHistoryContainer) {
+      chatHistoryContainer.addEventListener('scroll', handleScroll);
+      return () => chatHistoryContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   useEffect(() => {
     scrollToBottom();
-  }, [chatHistory]);
+  }, [chatHistory, isNearBottom]);
 
   useEffect(() => {
     const textareas = document.querySelectorAll('textarea');
@@ -512,7 +534,7 @@ function ChatArea() {
     <>
       <GlobalStyle />
       <ChatAreaContainer>
-        <ChatHistoryContainer ref={chatHistoryRef}>
+        <ChatHistoryContainer ref={chatHistoryRef} onScroll={handleScroll}>
           <Header
             value={headerText}
             onChange={handleHeaderChange}
