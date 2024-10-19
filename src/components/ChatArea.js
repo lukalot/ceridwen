@@ -23,7 +23,7 @@ const ChatAreaContainer = styled.div`
   color: #e0e0e0;
 `;
 
-const Header = styled.textarea`
+const Header = styled.input`
   font-family: 'Arno Pro', serif;
   font-weight: 500;
   font-size: 40px;
@@ -33,12 +33,8 @@ const Header = styled.textarea`
   width: 100%;
   background: none;
   border: none;
-  resize: none;
   border-bottom: 1px solid #242424;
-  flex-grow: 1;
-  max-height: 60px;
-  max-width: 100%;
-  width: 100%;
+  padding: 0 0 8px 0;
   spellcheck: false;
 
   &:focus {
@@ -185,7 +181,10 @@ const DropdownList = styled.ul`
 `;
 
 const DropdownItem = styled.li`
-  padding: 5px 10px;
+  padding: 9px;
+  padding-bottom: 5px;
+  padding-top: 8px;
+  border-top: 1px solid #363636;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
@@ -199,6 +198,7 @@ const DropdownItem = styled.li`
 function ModelSelector({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
   const options = ['Claude 3.5 Sonnet', 'gpt-4o', 'Claude 3 Opus', 'o1 Preview', 'gpt-3.5-turbo'];
+  const dropdownRef = useRef(null);
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
@@ -207,8 +207,21 @@ function ModelSelector({ value, onChange }) {
     setIsOpen(false);
   };
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
-    <CustomSelect>
+    <CustomSelect ref={dropdownRef}>
       {isOpen && (
         <DropdownList>
           {options.map((option) => (
@@ -233,7 +246,7 @@ const NewLineHint = styled.span`
 
 const ChatHistoryContainer = styled.div`
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
   width: 100%;
   max-width: 740px;
   font-family: 'Arno Pro', serif;
@@ -557,15 +570,6 @@ function ChatArea() {
   }, [chatHistory]);
 
   useEffect(() => {
-    const headerTextarea = document.querySelector('textarea[data-header]');
-    if (headerTextarea) {
-      headerTextarea.style.height = 'auto';
-      headerTextarea.style.height = `${headerTextarea.scrollHeight}px`;
-    }
-    scrollToBottom();
-  }, [headerText]);
-
-  useEffect(() => {
     if (chatinputRef.current) {
       chatinputRef.current.style.height = 'auto';
       chatinputRef.current.style.height = `${chatinputRef.current.scrollHeight}px`;
@@ -588,13 +592,10 @@ function ChatArea() {
           <Header
             value={headerText}
             onChange={handleHeaderChange}
-            data-header
+            spellCheck={false}
+            placeholder="Title"
           />
-          {chatHistory.length === 0 ? (
-            <MessageContent style={{color: '#666'}} value="This is where your chat messages will appear." readOnly />
-          ) : (
-            <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
-          )}
+          <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
         </ChatHistoryContainer>
         <ChatInputContainer>
           <InputRow>
