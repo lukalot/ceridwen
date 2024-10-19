@@ -125,9 +125,16 @@ const SendButton = styled.button`
   display: flex;  
   align-items: center;  
   justify-content: center;  
+  width: 30px;  // Set a fixed width
+  height: 28px; // Set a fixed height
 
   &:hover {
     background-color: #ce5a4a;
+  }
+
+  svg {
+    width: 14px; // Set a fixed width for the icon
+    height: 14px; // Set a fixed height for the icon
   }
 `;
 
@@ -205,7 +212,7 @@ function ModelSelector({ value, onChange }) {
       {isOpen && (
         <DropdownList>
           {options.map((option) => (
-            <DropdownItem key={option} onClick={() => handleSelect(option)}>
+            <DropdownItem key={`model-${option}`} onClick={() => handleSelect(option)}>
               {option}
             </DropdownItem>
           ))}
@@ -317,7 +324,7 @@ function ChatHistory({ messages, onMessageChange }) {
   return (
     <>
       {messages.map((message, index) => (
-        <MessageContentWrapper key={index}>
+        <MessageContentWrapper key={`message-${index}`}>
           {message.sender === 'Model' ? (
             <ModelMessageContent
               value={message.content}
@@ -345,11 +352,12 @@ function ChatHistory({ messages, onMessageChange }) {
   );
 }
 
-const getModelResponse = async (messages, model, onTokenReceived) => {
+const getModelResponse = async (messages, model, onTokenReceived, abortSignal) => {
   try {
     const response = await fetch('/chat', {
       method: 'POST',
       body: JSON.stringify({ messages, model }),
+      signal: abortSignal
     });
 
     if (!response.ok) {
@@ -393,6 +401,9 @@ const getModelResponse = async (messages, model, onTokenReceived) => {
 
     return fullResponse;
   } catch (error) {
+    if (error.name === 'AbortError') {
+      throw error; // Re-throw AbortError to be caught in the calling function
+    }
     console.error("There was an error calling the API:", error);
     return "I'm sorry, but I encountered an error while processing your request.";
   }
@@ -406,6 +417,8 @@ function ChatArea() {
   const chatHistoryRef = useRef(null);
   const [headerText, setHeaderText] = useState('Welcome to Ceridwen');
   const [isNearBottom, setIsNearBottom] = useState(true);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [abortController, setAbortController] = useState(null);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -425,12 +438,31 @@ function ChatArea() {
   const handleSend = () => {
     if (inputValue.trim()) {
       const newUserMessage = { sender: 'User', content: inputValue.trim(), status: 'sent' };
-      const newModelMessage = { sender: 'Model', content: '···', status: 'streaming' };
+      const newModelMessage = { sender: 'Model', content: '··· ', status: 'streaming' };
       setChatHistory(prevHistory => [...prevHistory, newUserMessage, newModelMessage]);
       setInputValue('');
+      setIsStreaming(true);
 
       // Move the API call here to avoid multiple calls
       getResponse(newUserMessage, newModelMessage);
+    }
+  };
+
+  const handleStop = () => {
+    if (abortController) {
+      abortController.abort();
+      setIsStreaming(false);
+      setChatHistory(prevHistory => {
+        if (prevHistory.length > 0) {
+          const newHistory = [...prevHistory];
+          const lastMessage = newHistory[newHistory.length - 1];
+          return [
+            ...newHistory.slice(0, -1),
+            { ...lastMessage, content: lastMessage.content + " [Stopped]", status: 'stopped' }
+          ];
+        }
+        return prevHistory;
+      });
     }
   };
 
@@ -440,30 +472,40 @@ function ChatArea() {
       content: msg.content
     }));
     
+    const controller = new AbortController();
+    setAbortController(controller);
+
     const onTokenReceived = (token) => {
       setChatHistory(prevHistory => {
         const newHistory = [...prevHistory];
         const lastMessage = newHistory[newHistory.length - 1];
         return [
           ...newHistory.slice(0, -1),
-          { ...lastMessage, content: lastMessage.content + token }
+          { ...lastMessage, content: lastMessage.content === '··· ' ? token : lastMessage.content + token }
         ];
       });
     };
 
     try {
-      const fullResponse = await getModelResponse(messagesToSend, model, onTokenReceived);
+      const fullResponse = await getModelResponse(messagesToSend, model, onTokenReceived, controller.signal);
       
       setChatHistory(prevHistory => [
         ...prevHistory.slice(0, -1),
         { ...modelMessage, content: fullResponse, status: 'received' }
       ]);
     } catch (error) {
-      console.error("Error getting model response:", error);
-      setChatHistory(prevHistory => [
-        ...prevHistory.slice(0, -1),
-        { ...modelMessage, content: "An error occurred while processing your request.", status: 'error' }
-      ]);
+      if (error.name === 'AbortError') {
+        console.log('Response generation was aborted');
+      } else {
+        console.error("Error getting model response:", error);
+        setChatHistory(prevHistory => [
+          ...prevHistory.slice(0, -1),
+          { ...modelMessage, content: "An error occurred while processing your request.", status: 'error' }
+        ]);
+      }
+    } finally {
+      setIsStreaming(false);
+      setAbortController(null);
     }
   };
 
@@ -503,7 +545,7 @@ function ChatArea() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatHistory, isNearBottom]);
+  }, [chatHistory]);
 
   useEffect(() => {
     const textareas = document.querySelectorAll('textarea');
@@ -521,7 +563,7 @@ function ChatArea() {
       headerTextarea.style.height = `${headerTextarea.scrollHeight}px`;
     }
     scrollToBottom();
-  }, [chatHistory, headerText]);
+  }, [headerText]);
 
   useEffect(() => {
     if (chatinputRef.current) {
@@ -529,6 +571,14 @@ function ChatArea() {
       chatinputRef.current.style.height = `${chatinputRef.current.scrollHeight}px`;
     }
   }, [inputValue]);
+
+  useEffect(() => {
+    return () => {
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [abortController]);
 
   return (
     <>
@@ -541,7 +591,7 @@ function ChatArea() {
             data-header
           />
           {chatHistory.length === 0 ? (
-            <MessageContent value="This is where your chat messages will appear." readOnly />
+            <MessageContent style={{color: '#666'}} value="This is where your chat messages will appear." readOnly />
           ) : (
             <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
           )}
@@ -563,9 +613,15 @@ function ChatArea() {
               <IconButton title="Attach images">
                 <FontAwesomeIcon icon={faCamera} />
               </IconButton>
-              <SendButton onClick={handleSend} title="Send message">
-                <FontAwesomeIcon icon={faArrowUp} />
-              </SendButton>
+              {isStreaming ? (
+                <SendButton onClick={handleStop} title="Stop inference">
+                  <FontAwesomeIcon icon={faCircleStop} />
+                </SendButton>
+              ) : (
+                <SendButton onClick={handleSend} title="Send message">
+                  <FontAwesomeIcon icon={faArrowUp} />
+                </SendButton>
+              )}
             </ButtonsContainer>
           </InputRow>
           <BottomRow>
