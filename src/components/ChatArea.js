@@ -37,7 +37,7 @@ const Header = styled.input`
   background: none;
   border: none;
   border-bottom: 1px solid #242424;
-  padding: 0 0 8px 0;
+  padding: 0 0 4px 0;
   spellcheck: false;
 
   &:focus {
@@ -259,6 +259,11 @@ const ChatHistoryContainer = styled.div`
   max-width: 740px;
   font-family: 'Minion Pro Medium', serif;
   padding: 20px;
+
+  @media (max-width: 600px) {
+    padding: 5px;
+    padding-top: 4px;
+  }
 `;
 
 const CappedCorner = styled.div`
