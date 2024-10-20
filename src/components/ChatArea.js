@@ -21,6 +21,9 @@ const ChatAreaContainer = styled.div`
   align-items: center;
   font-family: 'Minion Pro Medium', serif;
   color: #e0e0e0;
+  @media (max-width: 600px) {
+    padding-left: 8px;
+  }
 `;
 
 const Header = styled.input`

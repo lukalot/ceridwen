@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 const ThreadListHeader = styled.div`
@@ -78,13 +78,78 @@ const CeridwenDescription = styled.p`
   max-width: 235px;
 `;
 
-function ThreadList() {
+const MobileThreadHeader = styled.div`
+  font-size: 16px;
+  font-family: 'Freight Sans Pro', sans-serif;
+  font-weight: 500;
+  font-style: normal;
+  padding: 10px 12px;
+  background-color: #161616;
+  border: 1px solid #242424;
+  border-radius: 0px 0px 4px 4px;
+  border-top: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 1000;
+  margin-left: 8px;
+  margin-right: 8px;
+`;
+
+const MobileThreadDropdown = styled.div`
+  margin-top: 8px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #161616;
+  border: 1px solid #242424;
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 999;
+  margin-left: 8px;
+  margin-right: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 4px 4px 4px 4px;
+`;
+
+const MobileThreadContainer = styled.div`
+  position: relative;
+`;
+
+function ThreadList({ isMobile }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [currentThread, setCurrentThread] = useState({ id: 1, title: 'What is the meaning of life?' });
+
   // This is a placeholder. In a real app, you'd fetch threads from a state management system or API
   const threads = [
     { id: 1, title: 'What is the meaning of life?' },
     { id: 2, title: 'How do I build a react app?' },
     { id: 3, title: 'What should I learn next?' },
   ];
+
+  const handleThreadSelect = (thread) => {
+    setCurrentThread(thread);
+    setIsDropdownOpen(false);
+  };
+
+  if (isMobile) {
+    return (
+      <MobileThreadContainer>
+        <MobileThreadHeader onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+          {currentThread.title}
+        </MobileThreadHeader>
+        {isDropdownOpen && (
+          <MobileThreadDropdown>
+            {threads.map(thread => (
+              <ThreadItem key={thread.id} onClick={() => handleThreadSelect(thread)}>
+                {thread.title}
+              </ThreadItem>
+            ))}
+          </MobileThreadDropdown>
+        )}
+      </MobileThreadContainer>
+    );
+  }
 
   return (
     <ThreadListContainer>
