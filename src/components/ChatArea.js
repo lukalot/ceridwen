@@ -3,14 +3,6 @@ import styled, { createGlobalStyle } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperclip, faCamera, faArrowUp, faChevronDown, faCircleStop } from '@fortawesome/free-solid-svg-icons';
 
-// Add this global style at the top of the file, after the imports
-const GlobalStyle = createGlobalStyle`
-  ::selection {
-    background-color: rgba(230, 112, 96, 0.3); // #e67060 with 30% opacity
-    color: #ffffff;
-  }
-`;
-
 const ChatAreaContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -31,7 +23,7 @@ const Header = styled.input`
   font-weight: 500;
   font-size: 40px;
   color: #d9d9d9;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   margin-top: 0px;
   width: 100%;
   background: none;
@@ -327,9 +319,8 @@ const MessageContent = styled.textarea`
   resize: none;
   overflow: hidden;
   padding: 6px 10px;
-  padding-bottom: 0px;
+  padding-bottom: 3px;
   margin: 0;
-  line-height: 1.5;
 
   &:focus {
     outline: none;
@@ -598,8 +589,6 @@ function ChatArea() {
   }, [abortController]);
 
   return (
-    <>
-      <GlobalStyle />
       <ChatAreaContainer>
         <ChatHistoryContainer ref={chatHistoryRef} onScroll={handleScroll}>
           <Header
@@ -644,7 +633,6 @@ function ChatArea() {
           </BottomRow>
         </ChatInputContainer>
       </ChatAreaContainer>
-    </>
   );
 }
 
