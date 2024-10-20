@@ -96,6 +96,10 @@ const MobileLayout = styled.div`
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
+  const [chatHistory, setChatHistory] = useState([]);
+  const [model, setModel] = useState('gpt-4o');
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [abortController, setAbortController] = useState(null);
 
   useEffect(() => {
     const handleResize = () => {
@@ -105,6 +109,18 @@ function App() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleMessageChange = (index, newContent) => {
+    setChatHistory(prevHistory => {
+      const newHistory = [...prevHistory];
+      newHistory[index] = { ...newHistory[index], content: newContent };
+      return newHistory;
+    });
+  };
+
+  const handleModelChange = (newModel) => {
+    setModel(newModel);
+  };
 
   return (
     <>
@@ -117,13 +133,35 @@ function App() {
             </Panel>
             <ResizeHandle />
             <Panel>
-              <ChatArea />
+              <ChatArea 
+                chatHistory={chatHistory}
+                setChatHistory={setChatHistory}
+                model={model}
+                setModel={setModel}
+                isStreaming={isStreaming}
+                setIsStreaming={setIsStreaming}
+                abortController={abortController}
+                setAbortController={setAbortController}
+                onMessageChange={handleMessageChange}
+                onModelChange={handleModelChange}
+              />
             </Panel>
           </PanelGroup>
         </DesktopLayout>
         <MobileLayout>
           <ThreadList isMobile={true} />
-          <ChatArea />
+          <ChatArea 
+            chatHistory={chatHistory}
+            setChatHistory={setChatHistory}
+            model={model}
+            setModel={setModel}
+            isStreaming={isStreaming}
+            setIsStreaming={setIsStreaming}
+            abortController={abortController}
+            setAbortController={setAbortController}
+            onMessageChange={handleMessageChange}
+            onModelChange={handleModelChange}
+          />
         </MobileLayout>
       </AppContainer>
     </>

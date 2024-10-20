@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPaperclip, faCamera, faArrowUp, faChevronDown, faCircleStop } from '@fortawesome/free-solid-svg-icons';
+import MDEditor from '@uiw/react-md-editor';
+import MarkdownPreview from '@uiw/react-markdown-preview';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from "rehype-sanitize";
 
 const ChatAreaContainer = styled.div`
   display: flex;
@@ -300,65 +304,322 @@ const MessageContentWrapper = styled.div`
   margin-bottom: 9px;
   transition: background-color 0.2s ease;
 
-  &:focus-within {
+  &:focus-within, &.editing {
     background-color: #151515;
   }
 
-  &:focus-within ${CappedCorner} {
+  &:focus-within ${CappedCorner}, &.editing ${CappedCorner} {
     opacity: 1;
   }
 `;
 
-const MessageContent = styled.textarea`
-  width: 100%;
-  background: none;
-  border: none;
-  color: ${props => props.status === 'waiting' ? '#888' : '#e0e0e0'};
+const MessageContent = styled.div`
   font-family: 'Minion Pro Medium', serif;
   font-size: 18px;
-  resize: none;
-  overflow: hidden;
+  color: #e0e0e0;
   padding: 6px 10px;
   padding-bottom: 3px;
   margin: 0;
 
-  &:focus {
-    outline: none;
+  ${props => props.isModel && `
+    border-left: 2px solid #4a4a4a;
+    padding-left: 10px;
+    margin-top: 0px;
+    padding-top: 6px;
+    margin-left: 0px;
+  `}
+
+  .w-md-editor {
+    background-color: transparent !important;
+    box-shadow: none !important;
+    padding-top: 2px;
   }
+
+  .w-md-editor-content {
+    background-color: transparent !important;
+  }
+
+  .w-md-editor-text-pre > code,
+  .w-md-editor-text-input,
+  .wmde-markdown {
+    font-family: 'Minion Pro Medium', serif !important;
+    font-size: 18px !important;
+    color: #e0e0e0 !important;
+    background-color: transparent !important;
+  }
+
+  .w-md-editor-toolbar {
+    display: none !important;
+  }
+
+  .wmde-markdown {
+    background-color: transparent !important;
+    padding: 0 !important; /* Remove default padding */
+  }
+
+  /* Ensure the editor takes full width */
+  .w-md-editor-area {
+    width: 100% !important;
+  }
+
+  /* Adjust padding for both editor and preview */
+  .w-md-editor-text,
+  .wmde-markdown {
+    padding: 0 !important;
+  }
+
+  /* Remove default margins from markdown elements */
+  .wmde-markdown > *:first-child {
+    margin-top: 0 !important;
+  }
+
+  .wmde-markdown > *:last-child {
+    margin-bottom: 0 !important;
+  }
+
+
+  /* Headers */
+  h1, h2, h3, h4, h5, h6 {
+    color: #e67060;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    padding-bottom: 0px;
+    font-weight: 600;
+    font-family: 'Arno Pro', serif;
+  }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  /*
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1em; }
+  h5 { font-size: 0.875em; }
+  h6 { font-size: 0.85em; }
+
+  p {
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  a {
+    color: #58a6ff;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  pre {
+    background-color: #1e1e1e;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    margin-top: 0;
+    margin-bottom: 16px;
+  }
+
+  code {
+    background-color: rgba(110, 118, 129, 0.4);
+    border-radius: 6px;
+    padding: 0.2em 0.4em;
+    font-size: 85%;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: 100%;
+  }
+
+  ul, ol {
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-left: 2em;
+  }
+
+  li {
+    margin-bottom: 0.25em;
+  }
+
+  blockquote {
+    margin: 0 0 16px;
+    padding: 0 1em;
+    color: #8b949e;
+    border-left: 0.25em solid #30363d;
+  }
+
+  hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #30363d;
+    border: 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    margin-top: 0;
+    margin-bottom: 16px;
+    width: 100%;
+  }
+
+  table th,
+  table td {
+    padding: 6px 13px;
+    border: 1px solid #30363d;
+  }
+
+  table tr {
+    background-color: #0d1117;
+    border-top: 1px solid #21262d;
+  }
+
+  table tr:nth-child(2n) {
+    background-color: #161b22;
+  }
+
+  img {
+    max-width: 100%;
+    box-sizing: content-box;
+    background-color: #0d1117;
+  }
+
+  ul.contains-task-list {
+    padding-left: 0;
+  }
+
+  .task-list-item {
+    list-style-type: none;
+  }
+
+  .task-list-item input[type="checkbox"] {
+    margin: 0 0.2em 0.25em -1.6em;
+    vertical-align: middle;
+  }
+
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: #8b949e;
+  }
+
+  .token.punctuation {
+    color: #c9d1d9;
+  }
+
+  .token.property,
+  .token.tag,
+  .token.boolean,
+  .token.number,
+  .token.constant,
+  .token.symbol,
+  .token.deleted {
+    color: #79c0ff;
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: #a5d6ff;
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url,
+  .language-css .token.string,
+  .style .token.string {
+    color: #d2a8ff;
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.keyword {
+    color: #ff7b72;
+  }
+
+  .token.function,
+  .token.class-name {
+    color: #f2cc60;
+  }
+
+  .token.regex,
+  .token.important,
+  .token.variable {
+    color: #ffa657;
+  }
+  */
 `;
 
-const ModelMessageContent = styled(MessageContent)`
-  border-left: 2px solid #4a4a4a;
-  padding-left: 10px;
-  margin-top: 0px;
-  padding-top: 6px;
-  margin-left: 0px;
-  spellcheck: false;
-  position: relative;
-`;
+const EditableMarkdown = ({ value, onChange, isModel }) => {
+  const [isEditing, setIsEditing] = React.useState(false);
+
+  return (
+    <MessageContent isModel={isModel} onDoubleClick={() => setIsEditing(true)}>
+      {isEditing ? (
+        <MDEditor
+          value={value}
+          onChange={onChange}
+          preview="edit"
+          hideToolbar={true}
+          visibleDragbar={false}
+          height="auto"
+          minHeight={24}
+          autoFocus={true}
+          onBlur={() => setIsEditing(false)}
+          previewOptions={{
+            rehypePlugins: [[rehypeSanitize], [rehypeRaw]],
+          }}
+          textareaProps={{
+            placeholder: "Type your message here...",
+            style: {
+              background: 'transparent',
+              color: '#e0e0e0',
+              fontSize: '18px',
+              lineHeight: '1.5',
+              padding: '0',
+            }
+          }}
+        />
+      ) : (
+        <MarkdownPreview 
+          source={value} 
+          rehypePlugins={[[rehypeSanitize], [rehypeRaw]]}
+          style={{
+            background: 'transparent',
+            color: '#e0e0e0',
+            fontSize: '18px',
+            lineHeight: '1.5',
+            padding: '0',
+          }}
+        />
+      )}
+    </MessageContent>
+  );
+};
 
 function ChatHistory({ messages, onMessageChange }) {
   return (
     <>
       {messages.map((message, index) => (
         <MessageContentWrapper key={`message-${index}`}>
-          {message.sender === 'Model' ? (
-            <ModelMessageContent
-              value={message.content}
-              onChange={(e) => onMessageChange(index, e.target.value)}
-              rows={1}
-              status={message.status}
-              spellCheck={false}
-            />
-          ) : (
-            <MessageContent
-              value={message.content}
-              onChange={(e) => onMessageChange(index, e.target.value)}
-              rows={1}
-              status={message.status}
-              spellCheck={true}
-            />
-          )}
+          <EditableMarkdown
+            value={message.content}
+            onChange={(value) => onMessageChange(index, value)}
+            isModel={message.sender === 'Model'}
+          />
           <CappedCorner className="top-left" />
           <CappedCorner className="top-right" />
           <CappedCorner className="bottom-left" />
@@ -426,16 +687,23 @@ const getModelResponse = async (messages, model, onTokenReceived, abortSignal) =
   }
 };
 
-function ChatArea() {
+function ChatArea({
+  chatHistory,
+  setChatHistory,
+  model,
+  setModel,
+  isStreaming,
+  setIsStreaming,
+  abortController,
+  setAbortController,
+  onMessageChange,
+  onModelChange
+}) {
   const [inputValue, setInputValue] = useState('');
-  const [model, setModel] = useState('gpt-4o');
-  const [chatHistory, setChatHistory] = useState([]);
   const chatinputRef = useRef(null);
   const chatHistoryRef = useRef(null);
   const [headerText, setHeaderText] = useState('Welcome to Ceridwen');
   const [isNearBottom, setIsNearBottom] = useState(true);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [abortController, setAbortController] = useState(null);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -448,10 +716,6 @@ function ChatArea() {
     }
   };
 
-  const handleModelChange = (newModel) => {
-    setModel(newModel);
-  };
-
   const handleSend = () => {
     if (inputValue.trim()) {
       const newUserMessage = { sender: 'User', content: inputValue.trim(), status: 'sent' };
@@ -460,7 +724,6 @@ function ChatArea() {
       setInputValue('');
       setIsStreaming(true);
 
-      // Move the API call here to avoid multiple calls
       getResponse(newUserMessage, newModelMessage);
     }
   };
@@ -526,14 +789,6 @@ function ChatArea() {
     }
   };
 
-  const handleMessageChange = (index, newContent) => {
-    setChatHistory(prevHistory => {
-      const newHistory = [...prevHistory];
-      newHistory[index] = { ...newHistory[index], content: newContent };
-      return newHistory;
-    });
-  };
-
   const handleHeaderChange = (e) => {
     setHeaderText(e.target.value);
   };
@@ -589,50 +844,50 @@ function ChatArea() {
   }, [abortController]);
 
   return (
-      <ChatAreaContainer>
-        <ChatHistoryContainer ref={chatHistoryRef} onScroll={handleScroll}>
-          <Header
-            value={headerText}
-            onChange={handleHeaderChange}
-            spellCheck={false}
-            placeholder="Title"
+    <ChatAreaContainer>
+      <ChatHistoryContainer ref={chatHistoryRef} onScroll={handleScroll}>
+        <Header
+          value={headerText}
+          onChange={handleHeaderChange}
+          spellCheck={false}
+          placeholder="Title"
+        />
+        <ChatHistory messages={chatHistory} onMessageChange={onMessageChange} />
+      </ChatHistoryContainer>
+      <ChatInputContainer>
+        <InputRow>
+          <ChatInput
+            ref={chatinputRef}
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Reply here..."
+            rows={1}
           />
-          <ChatHistory messages={chatHistory} onMessageChange={handleMessageChange} />
-        </ChatHistoryContainer>
-        <ChatInputContainer>
-          <InputRow>
-            <ChatInput
-              ref={chatinputRef}
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Reply here..."
-              rows={1}
-            />
-            <ButtonsContainer>
-              <IconButton title="Attach files">
-                <FontAwesomeIcon icon={faPaperclip} />
-              </IconButton>
-              <IconButton title="Attach images">
-                <FontAwesomeIcon icon={faCamera} />
-              </IconButton>
-              {isStreaming ? (
-                <SendButton onClick={handleStop} title="Stop inference">
-                  <FontAwesomeIcon icon={faCircleStop} />
-                </SendButton>
-              ) : (
-                <SendButton onClick={handleSend} title="Send message">
-                  <FontAwesomeIcon icon={faArrowUp} />
-                </SendButton>
-              )}
-            </ButtonsContainer>
-          </InputRow>
-          <BottomRow>
-            <ModelSelector value={model} onChange={handleModelChange} />
-            <NewLineHint>Use <span style={{background:'#0a0a0a'}}>shift + return</span> for new line</NewLineHint>
-          </BottomRow>
-        </ChatInputContainer>
-      </ChatAreaContainer>
+          <ButtonsContainer>
+            <IconButton title="Attach files">
+              <FontAwesomeIcon icon={faPaperclip} />
+            </IconButton>
+            <IconButton title="Attach images">
+              <FontAwesomeIcon icon={faCamera} />
+            </IconButton>
+            {isStreaming ? (
+              <SendButton onClick={handleStop} title="Stop inference">
+                <FontAwesomeIcon icon={faCircleStop} />
+              </SendButton>
+            ) : (
+              <SendButton onClick={handleSend} title="Send message">
+                <FontAwesomeIcon icon={faArrowUp} />
+              </SendButton>
+            )}
+          </ButtonsContainer>
+        </InputRow>
+        <BottomRow>
+          <ModelSelector value={model} onChange={onModelChange} />
+          <NewLineHint>Use <span style={{background:'#0a0a0a'}}>shift + return</span> for new line</NewLineHint>
+        </BottomRow>
+      </ChatInputContainer>
+    </ChatAreaContainer>
   );
 }
 
