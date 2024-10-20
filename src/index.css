@@ -40,6 +40,134 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Minion Pro Medium';
+  src: url('../assets/fonts/Minion Pro Medium.ttf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Minion Pro';
+  src: url('../assets/fonts/Minion Pro Bold.ttf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Minion Pro';
+  src: url('../assets/fonts/Minion Pro Italic.ttf') format('opentype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Minion Pro';
+  src: url('../assets/fonts/Minion Pro Medium Italic.ttf') format('opentype');
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Minion Pro';
+  src: url('../assets/fonts/Minion Pro Medium.ttf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Minion Pro';
+  src: url('../assets/fonts/Minion Pro Semibold.ttf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBlack-Regular.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBlack-Italic.ttf') format('truetype');
+  font-weight: 900;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBold-Regular.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBold-Italic.ttf') format('truetype');
+  font-weight: bold;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBook-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProBook-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProLight-Regular.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProLight-Italic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProMedium-Regular.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProMedium-Italic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProSemibold-Regular.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Freight Sans Pro';
+  src: url('../assets/fonts/Freight Sans/FreightSansProSemibold-Italic.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+}
+
+
+
 body {
   margin: 0;
   font-family: 'Arno Pro', serif;

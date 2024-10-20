@@ -19,7 +19,7 @@ const ChatAreaContainer = styled.div`
   padding-left: 0px;
   padding-bottom: 9px;
   align-items: center;
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   color: #e0e0e0;
 `;
 
@@ -68,12 +68,12 @@ const ChatInput = styled.textarea`
   resize: none;
   font-size: 18px;
   text-align: left;
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   outline: none;
   padding: 0;
   margin: 0;
   margin-left: 2px;
-  margin-top: 2px;
+  margin-top: 0.5px;
   overflow-y: auto;
   background: none;
   color: #e0e0e0;
@@ -117,7 +117,6 @@ const SendButton = styled.button`
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  font-family: 'Roboto', helvetica, sans-serif;
   display: flex;  
   align-items: center;  
   justify-content: center;  
@@ -143,7 +142,7 @@ const BottomRow = styled.div`
 
 const CustomSelect = styled.div`
   position: relative;
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   font-size: 16px;
   color: #e0e0e0;
   width: auto;
@@ -153,7 +152,7 @@ const SelectButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 5px;
+  padding-top: 6px;
   padding-left: 8px;
   padding-right: 8px;
   background-color: #2a2a2a;
@@ -161,14 +160,14 @@ const SelectButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   color: inherit;
-  font-family: inherit;
-  font-size: inherit;
-  padding-bottom: 1px;
+  font-family: 'Minion Pro Medium', serif;
+  font-size: 15px;
+  padding-bottom: 3.5px;
 `;
 
 const DropdownList = styled.ul`
   position: absolute;
-  bottom: calc(100% + 5px);
+  bottom: calc(100% + 2px);
   left: 0;
   list-style: none;
   padding: 0;
@@ -181,17 +180,20 @@ const DropdownList = styled.ul`
 `;
 
 const DropdownItem = styled.li`
-  padding: 9px;
+  padding: 7px;
   padding-bottom: 5px;
-  padding-top: 8px;
+  padding-top: 2px;
   border-top: 1px solid #363636;
+  font-family: 'Freight Sans Pro', sans-serif;
+  font-weight: normal;
+  font-style: normal;
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: #3a3a3a;
+    background-color: #333;
   }
 `;
 
@@ -232,7 +234,7 @@ function ModelSelector({ value, onChange }) {
         </DropdownList>
       )}
       <SelectButton onClick={toggleDropdown}>
-        {value} <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: '5px', marginBottom: '5px' }} />
+        {value} <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: '6px', marginBottom: '4px' }} />
       </SelectButton>
     </CustomSelect>
   );
@@ -242,6 +244,9 @@ const NewLineHint = styled.span`
   margin-top: 8px;
   font-size: 16px;
   color: #888;
+  font-family: 'Freight Sans Pro', sans-serif;
+  font-weight: normal;
+  font-style: normal;
 `;
 
 const ChatHistoryContainer = styled.div`
@@ -249,7 +254,7 @@ const ChatHistoryContainer = styled.div`
   overflow-y: scroll;
   width: 100%;
   max-width: 740px;
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   padding: 20px;
 `;
 
@@ -309,7 +314,7 @@ const MessageContent = styled.textarea`
   background: none;
   border: none;
   color: ${props => props.status === 'waiting' ? '#888' : '#e0e0e0'};
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   font-size: 18px;
   resize: none;
   overflow: hidden;
@@ -627,7 +632,7 @@ function ChatArea() {
           </InputRow>
           <BottomRow>
             <ModelSelector value={model} onChange={handleModelChange} />
-            <NewLineHint>Use shift + return for new line</NewLineHint>
+            <NewLineHint>Use <span style={{background:'#0a0a0a'}}>shift + return</span> for new line</NewLineHint>
           </BottomRow>
         </ChatInputContainer>
       </ChatAreaContainer>

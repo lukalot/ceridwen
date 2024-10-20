@@ -9,7 +9,7 @@ const AppContainer = styled.div`
   display: flex;
   height: 100vh;
   overflow: hidden;
-  font-family: 'Arno Pro', serif;
+  font-family: 'Minion Pro Medium', serif;
   background-color: #111111;
   color: #e0e0e0;
 `;
@@ -49,11 +49,11 @@ function App() {
   return (
     <AppContainer>
       <PanelGroup direction="horizontal">
-        <Panel defaultSize={25} minSize={16} maxSize={30} style={{ minWidth: '240px' }}>
+        <Panel defaultSize={25} maxSize={36} style={{ minWidth: '240px' }}>
           <ThreadList />
         </Panel>
         <ResizeHandle />
-        <Panel minSize={30}>
+        <Panel>
           <ChatArea />
         </Panel>
       </PanelGroup>
